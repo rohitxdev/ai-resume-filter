@@ -2,7 +2,7 @@ import SQLiteDB from "better-sqlite3";
 
 const db = new SQLiteDB("cache.db");
 
-db.pragma("journal_mode = WAL");
+// db.pragma("journal_mode = WAL");
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS cache (
@@ -12,7 +12,9 @@ db.exec(`
     );`);
 
 const getDataStmt = db.prepare("SELECT value FROM cache WHERE key = ?");
-const setDataStmt = db.prepare("INSERT OR REPLACE INTO cache (key, value) VALUES (?, ?)");
+const setDataStmt = db.prepare(
+	"INSERT OR REPLACE INTO cache (key, value) VALUES (?, ?)",
+);
 
 export const cache = {
 	get: (key: string) => {

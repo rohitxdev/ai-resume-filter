@@ -1,4 +1,8 @@
-import { type ActionFunctionArgs, type MetaFunction, json } from "@remix-run/node";
+import {
+	type ActionFunctionArgs,
+	type MetaFunction,
+	json,
+} from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import {
@@ -9,6 +13,7 @@ import {
 	FileTrigger,
 	Heading,
 	Label,
+	OverlayArrow,
 	Popover,
 	Slider,
 	SliderOutput,
@@ -23,18 +28,26 @@ import {
 	TooltipTrigger,
 } from "react-aria-components";
 import {
+	LuFilePlus2,
 	LuHistory,
 	LuHome,
-	LuImage,
 	LuSlidersHorizontal,
 	LuSparkles,
 	LuUploadCloud,
 	LuX,
 } from "react-icons/lu";
 import { z } from "zod";
-import { cache } from "../../utils/cache.server";
-import { xxhashSync } from "../../utils/crypto.server";
-import { scanResume } from "./gen-ai";
+import Spinner from "~/assets/spinner.svg?react";
+import { Modal } from "~/components/ui";
+import { consumeCredit } from "~/db/user.server";
+import { getUser } from "~/utils/auth.server";
+import { cache } from "~/utils/cache.server";
+import { config } from "~/utils/config.server";
+import { xxhashSync } from "~/utils/crypto.server";
+import { useRootLoader } from "~/utils/hooks";
+import { CircularProgressBar } from "./circle-progress";
+import { OutOfCreditsDialog } from "./dialogs";
+import { scanResume } from "./gen-ai.server";
 import { convertPDFToImages } from "./pdf.client";
 
 const dataSchema = z.object({
@@ -55,23 +68,36 @@ const requestSchema = z.object({
 	requirements: z.string(),
 });
 
-const analyseResume = async (imgUrls: string[], requirements: string) => {
-	const key = xxhashSync.hash(requirements + imgUrls.join());
-	const cachedData = cache.get(key);
-	const isCacheHit = cachedData !== null;
-	if (isCacheHit) return { ...JSON.parse(cachedData), isCacheHit };
+const analyseResume = async (
+	imgUrls: string[],
+	requirements: string,
+	userId: string,
+) => {
+	let res: string | null;
+	if (config.IS_CACHE_ENABLED) {
+		const key = xxhashSync.hash(requirements + imgUrls.join());
+		const cachedData = cache.get(key);
+		if (cachedData !== null)
+			return { ...JSON.parse(cachedData), isCacheHit: true };
 
-	const res = await scanResume(requirements, imgUrls);
-	cache.set(key, res);
-	return { ...JSON.parse(res), isCacheHit };
+		res = await scanResume(requirements, imgUrls);
+		cache.set(key, res);
+	} else {
+		res = await scanResume(requirements, imgUrls);
+	}
+	consumeCredit(Number.parseInt(userId, 10));
+	return { ...JSON.parse(res), isCacheHit: false };
 };
 
 export const action = async (args: ActionFunctionArgs) => {
+	const user = await getUser(args.request);
+	if (!user) return json({ success: false, message: "user not found" }, 404);
+
 	switch (args.request.method) {
 		case "POST": {
 			const data = requestSchema.parse(await args.request.json());
 			const outputPromises = data.imgUrls.map((item) =>
-				analyseResume(item, data.requirements),
+				analyseResume(item, data.requirements, user.id),
 			);
 			const payload = await Promise.all(outputPromises);
 			return json({ success: true, payload }, 200);
@@ -83,14 +109,10 @@ export const action = async (args: ActionFunctionArgs) => {
 };
 
 export const meta: MetaFunction = () => {
-	return [{ title: "New Remix App" }, { name: "description", content: "Welcome to Remix!" }];
-};
-
-const getScoreColor = (score: number) => {
-	if (score < 25) return "red";
-	if (score < 50) return "orange";
-	if (score < 75) return "yellow";
-	return "green";
+	return [
+		{ title: "New Remix App" },
+		{ name: "description", content: "Welcome to Remix!" },
+	];
 };
 
 interface Filter {
@@ -140,16 +162,24 @@ const Filters = (props: FiltersProps) => {
 
 export default function Index() {
 	const fetcher = useFetcher();
+	const { user } = useRootLoader();
 	const [images, setImages] = useState<string[][]>([]);
 	const [requirements, setRequirements] = useState("");
-	const [data, setData] = useState<z.infer<typeof responseSchema>["payload"] | null>(null);
+	const [showOutOfCredits, setShowOutOfCredits] = useState(false);
+	const [data, setData] = useState<
+		z.infer<typeof responseSchema>["payload"] | null
+	>(null);
 	const [minScore, setMinScore] = useState(0);
 
 	const submit = (images: string[][]) => {
 		if (!images.length || !requirements) return;
+		// if (user && user?.creditsLeft <= 0) return setShowOutOfCredits(true);
 
 		fetcher.submit(
-			{ imgUrls: images.map((item) => item.map((item) => item.split(",")[1])), requirements },
+			{
+				imgUrls: images.map((item) => item.map((item) => item.split(",")[1])),
+				requirements,
+			},
 			{ method: "POST", action: "/?index", encType: "application/json" },
 		);
 	};
@@ -175,11 +205,36 @@ export default function Index() {
 
 	return (
 		<div className="grid h-screen w-screen max-w-5xl grid-rows-[auto_1fr] place-content-center justify-items-center gap-8 p-4 font-sans">
+			<Modal
+				dialog={<OutOfCreditsDialog />}
+				isOpen={showOutOfCredits}
+				onOpenChange={setShowOutOfCredits}
+			/>
+			{user && (
+				<div className="absolute top-0 right-0 m-8 flex items-center gap-4">
+					<p className="text-black/60">
+						You have&nbsp;
+						<span className="font-semibold text-black text-lg">
+							{user.creditsLeft}
+						</span>
+						&nbsp; credits left.
+					</p>
+					{user?.pictureUrl && (
+						<img
+							className="rounded-full"
+							src={user?.pictureUrl}
+							alt="User"
+							height={48}
+							width={48}
+						/>
+					)}
+				</div>
+			)}
 			<h1 className="text-center font-bold text-4xl">
 				Streamline Your Hiring with AI-Powered Resume Filtering
 			</h1>
 			<Tabs
-				className="grid size-full grid-cols-[auto_1fr] gap-4 *:rounded-lg *:border *:bg-white *:p-4 last:*:p-8"
+				className="grid size-full grid-cols-[auto_1fr] gap-4 *:rounded-lg *:border *:bg-white/50 *:p-4 last:*:p-8"
 				orientation="horizontal"
 			>
 				<TabList className="*:flex *:w-36 *:items-center *:gap-2 *:rounded *:border *:border-transparent *:p-2 *:outline-none hover:*:border hover:*:bg-gray-100 focus:*:border-gray-200 focus:*:bg-gray-100">
@@ -211,7 +266,7 @@ export default function Index() {
 							/>
 						</Label>
 						<DropZone
-							className="drop-target:-outline-offset-[12px] grid aspect-video w-full min-w-[400px] max-w-lg place-content-center justify-items-center gap-8 rounded-2xl border-2 border-gray-700 border-dashed drop-target:bg-gray-200 p-4 outline-dashed drop-target:outline-gray-400 outline-transparent outline-offset-0 duration-150"
+							className="drop-target:-outline-offset-[12px] grid aspect-video w-full min-w-[400px] max-w-lg place-content-center justify-items-center gap-4 rounded-2xl border-2 border-gray-700 border-dashed drop-target:bg-black/10 p-4 outline-dashed drop-target:outline-black-40 outline-transparent outline-offset-0 duration-150"
 							onDrop={async (e) => {
 								const filesPromise = e.items
 									.filter((item) => item.kind === "file")
@@ -238,6 +293,11 @@ export default function Index() {
 							<h2 className="font-semibold text-2xl">
 								Drag and drop files/folder here
 							</h2>
+							<div className="flex w-full items-center gap-4">
+								<hr className="grow border border-black/10" />
+								<p>OR</p>
+								<hr className="grow border border-black/10" />
+							</div>
 							<FileTrigger
 								onSelect={async (files) => {
 									if (!files) return;
@@ -246,37 +306,44 @@ export default function Index() {
 								allowsMultiple
 								acceptedFileTypes={["application/pdf"]}
 							>
-								<Button className="flex w-fit items-center gap-2 rounded border border-gray-400 p-2">
-									Browse <LuImage />
+								<Button className="flex w-fit items-center gap-2 rounded border-2 border-black px-4 py-2 font-semibold duration-100 hover:bg-black hover:text-white">
+									Browse <LuFilePlus2 className="size-4 stroke-[3]" />
 								</Button>
 							</FileTrigger>
 						</DropZone>
-						<div className="flex w-full">
-							<TooltipTrigger delay={100}>
-								<Tooltip
-									className="mb-2 rounded border bg-white p-2"
-									placement="right"
-								>
-									This will consume {images.flat().length} credits.
-								</Tooltip>
-								<Button
-									className="mx-auto my-4 flex items-center gap-2 rounded bg-blue-500 px-4 py-2 font-bold text-lg text-white disabled:cursor-not-allowed disabled:brightness-75"
-									onPress={() => submit(images)}
-									isDisabled={!requirements}
-								>
-									Run <LuSparkles />
-								</Button>
-							</TooltipTrigger>
-							{images.length > 0 && (
-								<Filters
-									onFilterUpdate={(filter) => setMinScore(filter.minScore)}
-								/>
-							)}
-						</div>
+						{images.length > 0 && (
+							<div className="flex w-full">
+								<TooltipTrigger delay={100}>
+									<Tooltip
+										className="ml-4 rounded border bg-white p-2 text-gray-500 text-sm"
+										placement="right"
+									>
+										<OverlayArrow>
+											<div className="border-4 border-transparent border-r-white" />
+										</OverlayArrow>
+										This will consume {images.flat().length} credit(s).
+									</Tooltip>
+									<Button
+										className="mx-auto my-4 flex items-center gap-2 rounded bg-blue-500 px-4 py-2 font-bold text-lg text-white disabled:cursor-not-allowed disabled:brightness-75"
+										onPress={() => submit(images)}
+										isDisabled={!requirements}
+									>
+										Run <LuSparkles />
+									</Button>
+								</TooltipTrigger>
+								{data && (
+									<Filters
+										onFilterUpdate={(filter) => setMinScore(filter.minScore)}
+									/>
+								)}
+							</div>
+						)}
 					</fetcher.Form>
-					<div className="flex max-h-[600px] flex-wrap items-center justify-center gap-8 overflow-y-auto border p-2 text-center empty:hidden">
+					<div className="flex max-h-[600px] flex-wrap items-center justify-center gap-8 overflow-y-auto rounded border border-black/20 p-4 text-center empty:hidden">
 						{fetcher.state === "submitting" ? (
-							<p className="text-xl">Processing...</p>
+							<p className="text-xl">
+								Processing... <Spinner className="size-10 fill-black" />
+							</p>
 						) : data ? (
 							<div className="flex flex-col gap-4">
 								{data
@@ -286,13 +353,10 @@ export default function Index() {
 											className="flex max-w-lg items-center gap-4 rounded-lg border p-4"
 											key={item.reason}
 										>
-											<div
-												className="float-left rounded-full border-8 p-4 font-bold text-xl"
-												style={{ borderColor: getScoreColor(item.score) }}
-											>
-												<h3 className="font-semibold">Score</h3>
-												{item.score}
-											</div>
+											<CircularProgressBar
+												className="shrink-0"
+												progress={item.score}
+											/>
 											<div className="flex flex-col gap-2 *:rounded *:border">
 												<div>
 													<h3 className="font-semibold">Email</h3>
@@ -309,33 +373,35 @@ export default function Index() {
 									))}
 							</div>
 						) : (
-							<div className="flex justify-end gap-4">
-								{images.map((item, i) => (
-									<div key={item[0].slice(500, 600)}>
-										<div className="flex w-full justify-between">
-											<span className="font-medium text-gray-400 text-sm">
-												{item.length} page(s)
-											</span>
-											<Button
-												className="mb-1 flex items-center gap-2 rounded-full bg-gray-200 p-1 font-bold text-gray-400 text-lg duration-100 hover:bg-gray-600 hover:text-white"
-												onPress={() =>
-													setImages((items) =>
-														items.filter((_, idx) => idx !== i),
-													)
-												}
-											>
-												<LuX className="size-4 stroke-[3]" />
-											</Button>
+							images.length > 0 && (
+								<div className="flex justify-end gap-4">
+									{images.map((item, i) => (
+										<div key={item[0].slice(500, 600)}>
+											<div className="flex w-full justify-between">
+												<span className="font-medium text-gray-500 text-sm">
+													{item.length} page(s)
+												</span>
+												<Button
+													className="mb-1 flex items-center gap-2 rounded-full bg-gray-200 p-1 font-bold text-gray-500 text-lg duration-100 hover:bg-gray-600 hover:text-white"
+													onPress={() =>
+														setImages((items) =>
+															items.filter((_, idx) => idx !== i),
+														)
+													}
+												>
+													<LuX className="size-4 stroke-[3]" />
+												</Button>
+											</div>
+											<img
+												className="rounded border border-gray-600"
+												src={item[0]}
+												alt="resume"
+												width={200}
+											/>
 										</div>
-										<img
-											className="rounded border border-gray-600"
-											src={item[0]}
-											alt="resume"
-											width={200}
-										/>
-									</div>
-								))}
-							</div>
+									))}
+								</div>
+							)
 						)}
 					</div>
 				</TabPanel>
