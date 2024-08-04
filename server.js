@@ -1,24 +1,27 @@
+import http from "node:http";
 import { createRequestHandler } from "@remix-run/express";
 import compression from "compression";
 import express from "express";
 import morgan from "morgan";
-import http from "http";
-import {WebSocketServer} from "ws";
-process.loadEnvFile("./.env");
+import { WebSocketServer } from "ws";
+
+try {
+	process.loadEnvFile();
+} catch (err) {
+	console.log("\u001b[34mwarning: could not load env file.\u001b[0m");
+}
 
 const viteDevServer =
-process.env.NODE_ENV === "production"
-? undefined
-: await import("vite").then((vite) =>
-  vite.createServer({
-    server: { middlewareMode: true },
-  })
-);
+	process.env.NODE_ENV === "production"
+		? undefined
+		: await import("vite").then((vite) =>
+				vite.createServer({
+					server: { middlewareMode: true },
+				}),
+			);
 
 const remixHandler = createRequestHandler({
-  build: viteDevServer
-  ? () => viteDevServer.ssrLoadModule("virtual:remix/server-build")
-  : await import("./build/server/index.js"),
+	build: viteDevServer ? () => viteDevServer.ssrLoadModule("virtual:remix/server-build") : await import("./build/server/index.js"),
 });
 
 const app = express();
@@ -30,13 +33,10 @@ app.disable("x-powered-by");
 
 // handle asset requests
 if (viteDevServer) {
-  app.use(viteDevServer.middlewares);
+	app.use(viteDevServer.middlewares);
 } else {
-  // Vite fingerprints its assets so we can cache forever.
-  app.use(
-    "/assets",
-    express.static("build/client/assets", { immutable: true, maxAge: "1y" })
-  );
+	// Vite fingerprints its assets so we can cache forever.
+	app.use("/assets", express.static("build/client/assets", { immutable: true, maxAge: "1y" }));
 }
 
 // Everything else (like favicon.ico) is cached for an hour. You may want to be
@@ -48,24 +48,22 @@ app.use(morgan("tiny"));
 // handle SSR requests
 app.all("*", remixHandler);
 
-const server=http.createServer(app);
+const server = http.createServer(app);
 
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', (ws) => {
-  console.log('Client connected');
+wss.on("connection", (ws) => {
+	console.log("Client connected");
 
-  ws.on('message', (message) => {
-    console.log('Received:', message.toString());
-    ws.send(`Server received: ${message}`);
-  });
+	ws.on("message", (message) => {
+		console.log("Received:", message.toString());
+		ws.send(`Server received: ${message}`);
+	});
 
-  ws.on('close', () => {
-    console.log('Client disconnected');
-  });
+	ws.on("close", () => {
+		console.log("Client disconnected");
+	});
 });
 
-const port=process.env.PORT ??3000
-server.listen(port, () =>
-  console.log(`Express server listening at http://localhost:${port}`)
-);
+const port = process.env.PORT ?? 3000;
+server.listen(port, () => console.log(`Express server listening at http://localhost:${port}`));
