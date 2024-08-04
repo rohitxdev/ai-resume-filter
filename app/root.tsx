@@ -1,13 +1,15 @@
-import {
-	Links,
-	Meta,
-	Outlet,
-	Scripts,
-	ScrollRestoration,
-} from "@remix-run/react";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
 import "./tailwind.css";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { getUser } from "./utils/auth.server";
+import { config } from "./utils/config.server";
+
+const clientConfig = {
+	APP_ENV: config.APP_ENV,
+	MINIMUM_PURCHASE_AMOUNT: config.MINIMUM_PURCHASE_AMOUNT,
+	MAX_JOB_DESCRIPTION_LENGTH: config.MAX_JOB_DESCRIPTION_LENGTH,
+	PADDLE_CLIENT_TOKEN: config.PADDLE_CLIENT_TOKEN,
+} as const;
 
 export const loader = async (args: LoaderFunctionArgs) => {
 	const user = await getUser(args.request);
@@ -18,6 +20,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
 
 	return {
 		user,
+		clientConfig,
 	};
 };
 
@@ -29,11 +32,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
 				<link rel="shortcut icon" href="/logo.png" type="image/png" />
-				<link
-					rel="preconnect"
-					href="https://fonts.gstatic.com"
-					crossOrigin="anonymous"
-				/>
+				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 				<link
 					href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100..900;1,100..900&family=Epilogue:ital,wght@0,100..900;1,100..900&display=swap"
 					rel="stylesheet"

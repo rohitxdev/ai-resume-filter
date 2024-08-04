@@ -13,6 +13,8 @@
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.623.0",
 		"@google/generative-ai": "^0.16.0",
+		"@paddle/paddle-js": "^1.2.1",
+		"@paddle/paddle-node-sdk": "^1.4.1",
 		"@remix-run/express": "^2.11.0",
 		"@remix-run/node": "^2.11.0",
 		"@remix-run/react": "^2.11.0",

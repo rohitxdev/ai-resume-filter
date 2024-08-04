@@ -14,6 +14,12 @@ importers:
       '@google/generative-ai':
         specifier: ^0.16.0
         version: 0.16.0
+      '@paddle/paddle-js':
+        specifier: ^1.2.1
+        version: 1.2.1
+      '@paddle/paddle-node-sdk':
+        specifier: ^1.4.1
+        version: 1.4.1
       '@remix-run/express':
         specifier: ^2.11.0
         version: 2.11.0(express@4.19.2)(typescript@5.5.4)
@@ -857,6 +863,12 @@ packages:
   '@npmcli/promise-spawn@6.0.2':
     resolution: {integrity: sha512-gGq0NJkIGSwdbUt4yhdF8ZrmkGKVz9vAdVzpOfnom+V8PLSmSOVhZwbNvZZS1EYcJN5hzzKBxmmVVAInM6HQLg==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
+  '@paddle/paddle-js@1.2.1':
+    resolution: {integrity: sha512-yvjNrY/msgei/BmRg019giGvtwD+gDUYZpMi7e/4sQbTFrMsRmod/W2ywOVpPhNnxM5ZxZbtTVLCEkdcqZmxYQ==}
+
+  '@paddle/paddle-node-sdk@1.4.1':
+    resolution: {integrity: sha512-e0crjEznXi5Wfvj2YtHCqRj8dgLBoPS/m+qCLYE9QAmAlRdCusx92EsAjJd7u8Nf20WJzEksAfF8MgR9fABW4g==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -5262,6 +5274,15 @@ snapshots:
     dependencies:
       which: 3.0.1
 
+  '@paddle/paddle-js@1.2.1': {}
+
+  '@paddle/paddle-node-sdk@1.4.1':
+    dependencies:
+      lodash: 4.17.21
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
+
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
@@ -8502,7 +8523,6 @@ snapshots:
   node-fetch@2.7.0:
     dependencies:
       whatwg-url: 5.0.0
-    optional: true
 
   node-releases@2.0.18: {}
 
@@ -9372,8 +9392,7 @@ snapshots:
 
   toml@3.0.0: {}
 
-  tr46@0.0.3:
-    optional: true
+  tr46@0.0.3: {}
 
   trim-lines@3.0.1: {}
 
@@ -9580,14 +9599,12 @@ snapshots:
 
   web-streams-polyfill@3.3.3: {}
 
-  webidl-conversions@3.0.1:
-    optional: true
+  webidl-conversions@3.0.1: {}
 
   whatwg-url@5.0.0:
     dependencies:
       tr46: 0.0.3
       webidl-conversions: 3.0.1
-    optional: true
 
   which-typed-array@1.1.15:
     dependencies:

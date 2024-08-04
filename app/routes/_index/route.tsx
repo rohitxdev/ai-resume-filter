@@ -1,24 +1,13 @@
-import {
-	type ActionFunctionArgs,
-	type MetaFunction,
-	json,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type MetaFunction, json } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import {
 	Button,
-	Dialog,
-	DialogTrigger,
 	DropZone,
 	FileTrigger,
 	Heading,
 	Label,
 	OverlayArrow,
-	Popover,
-	Slider,
-	SliderOutput,
-	SliderThumb,
-	SliderTrack,
 	Tab,
 	TabList,
 	TabPanel,
@@ -27,15 +16,7 @@ import {
 	Tooltip,
 	TooltipTrigger,
 } from "react-aria-components";
-import {
-	LuFilePlus2,
-	LuHistory,
-	LuHome,
-	LuSlidersHorizontal,
-	LuSparkles,
-	LuUploadCloud,
-	LuX,
-} from "react-icons/lu";
+import { LuCheckCircle, LuFilePlus2, LuHistory, LuHome, LuSparkles, LuUploadCloud, LuX } from "react-icons/lu";
 import { z } from "zod";
 import Spinner from "~/assets/spinner.svg?react";
 import { Modal } from "~/components/ui";
@@ -46,7 +27,9 @@ import { config } from "~/utils/config.server";
 import { xxhashSync } from "~/utils/crypto.server";
 import { useRootLoader } from "~/utils/hooks";
 import { CircularProgressBar } from "./circle-progress";
+import { CreditsLeft } from "./credits-left";
 import { OutOfCreditsDialog } from "./dialogs";
+import { Filters } from "./filters";
 import { scanResume } from "./gen-ai.server";
 import { convertPDFToImages } from "./pdf.client";
 
@@ -68,17 +51,14 @@ const requestSchema = z.object({
 	requirements: z.string(),
 });
 
-const analyseResume = async (
-	imgUrls: string[],
-	requirements: string,
-	userId: string,
-) => {
+const analyseResume = async (imgUrls: string[], requirements: string, userId: string) => {
 	let res: string | null;
 	if (config.IS_CACHE_ENABLED) {
 		const key = xxhashSync.hash(requirements + imgUrls.join());
 		const cachedData = cache.get(key);
-		if (cachedData !== null)
+		if (cachedData !== null) {
 			return { ...JSON.parse(cachedData), isCacheHit: true };
+		}
 
 		res = await scanResume(requirements, imgUrls);
 		cache.set(key, res);
@@ -96,9 +76,7 @@ export const action = async (args: ActionFunctionArgs) => {
 	switch (args.request.method) {
 		case "POST": {
 			const data = requestSchema.parse(await args.request.json());
-			const outputPromises = data.imgUrls.map((item) =>
-				analyseResume(item, data.requirements, user.id),
-			);
+			const outputPromises = data.imgUrls.map((item) => analyseResume(item, data.requirements, user.id));
 			const payload = await Promise.all(outputPromises);
 			return json({ success: true, payload }, 200);
 		}
@@ -109,67 +87,18 @@ export const action = async (args: ActionFunctionArgs) => {
 };
 
 export const meta: MetaFunction = () => {
-	return [
-		{ title: "New Remix App" },
-		{ name: "description", content: "Welcome to Remix!" },
-	];
-};
-
-interface Filter {
-	minScore: number;
-}
-
-interface FiltersProps {
-	onFilterUpdate: (filter: Filter) => void;
-}
-
-const Filters = (props: FiltersProps) => {
-	return (
-		<DialogTrigger>
-			<Button>
-				<LuSlidersHorizontal className="size-5 text-black" />
-			</Button>
-			<Popover>
-				<Dialog className="rounded-md border bg-white p-4 text-center outline-none">
-					<Heading>Filters</Heading>
-					<Slider
-						className="w-64"
-						defaultValue={0}
-						onChange={(val) => props.onFilterUpdate({ minScore: val })}
-					>
-						<div className="flex w-full justify-between text-gray-400">
-							<Label>Minimum Score</Label>
-							<SliderOutput />
-						</div>
-						<SliderTrack className="relative h-7 w-full">
-							{({ state }) => (
-								<>
-									<div className="absolute top-[50%] h-2 w-full translate-y-[-50%] rounded-full bg-gray-200" />
-									<div
-										className={`absolute top-[50%] h-2 translate-y-[-50%] rounded-full duration-75 ${state.isThumbDragging(0) ? "bg-gray-700" : "bg-gray-400"}`}
-										style={{ width: `${state.getThumbPercent(0) * 100}%` }}
-									/>
-									<SliderThumb className="top-[50%] h-5 w-3 rounded-sm border border-solid bg-gray-400 dragging:bg-gray-600 outline-none ring-black transition duration-75 focus-visible:ring-2" />
-								</>
-							)}
-						</SliderTrack>
-					</Slider>
-				</Dialog>
-			</Popover>
-		</DialogTrigger>
-	);
+	return [{ title: "New Remix App" }, { name: "description", content: "Welcome to Remix!" }];
 };
 
 export default function Index() {
 	const fetcher = useFetcher();
-	const { user } = useRootLoader();
+	const { user, clientConfig } = useRootLoader();
 	const [images, setImages] = useState<string[][]>([]);
 	const [requirements, setRequirements] = useState("");
 	const [showOutOfCredits, setShowOutOfCredits] = useState(false);
-	const [data, setData] = useState<
-		z.infer<typeof responseSchema>["payload"] | null
-	>(null);
+	const [data, setData] = useState<z.infer<typeof responseSchema>["payload"] | null>(null);
 	const [minScore, setMinScore] = useState(0);
+	const jobDescriptionLengthLeft = clientConfig.MAX_JOB_DESCRIPTION_LENGTH - requirements.length;
 
 	const submit = (images: string[][]) => {
 		if (!images.length || !requirements) return;
@@ -205,38 +134,28 @@ export default function Index() {
 
 	return (
 		<div className="grid h-screen w-screen max-w-5xl grid-rows-[auto_1fr] place-content-center justify-items-center gap-8 p-4 font-sans">
-			<Modal
-				dialog={<OutOfCreditsDialog />}
-				isOpen={showOutOfCredits}
-				onOpenChange={setShowOutOfCredits}
-			/>
+			<Modal dialog={<OutOfCreditsDialog />} isOpen={showOutOfCredits} onOpenChange={setShowOutOfCredits} />
 			{user && (
 				<div className="absolute top-0 right-0 m-8 flex items-center gap-4">
-					<p className="text-black/60">
-						You have&nbsp;
-						<span className="font-semibold text-black text-lg">
-							{user.creditsLeft}
-						</span>
-						&nbsp; credits left.
-					</p>
-					{user?.pictureUrl && (
-						<img
-							className="rounded-full"
-							src={user?.pictureUrl}
-							alt="User"
-							height={48}
-							width={48}
-						/>
-					)}
+					<CreditsLeft />
+					{user?.pictureUrl && <img className="rounded-full" src={user?.pictureUrl} alt="User" height={48} width={48} />}
 				</div>
 			)}
-			<h1 className="text-center font-bold text-4xl">
-				Streamline Your Hiring with AI-Powered Resume Filtering
-			</h1>
-			<Tabs
-				className="grid size-full grid-cols-[auto_1fr] gap-4 *:rounded-lg *:border *:bg-white/50 *:p-4 last:*:p-8"
-				orientation="horizontal"
-			>
+			<div className="grid gap-4">
+				<h1 className="text-center font-bold text-4xl">Streamline Your Hiring with AI-Powered Resume Filtering.</h1>
+				<ul className="flex flex-wrap justify-center gap-4 *:flex *:items-center *:gap-2 [&_svg]:stroke-[3]">
+					<li>
+						<LuCheckCircle /> Multiple file formats (PDF, DOC, JPG, PNG)
+					</li>
+					<li>
+						<LuCheckCircle /> 97% accuracy
+					</li>
+					<li>
+						<LuCheckCircle /> Scans low quality images
+					</li>
+				</ul>
+			</div>
+			<Tabs className="grid size-full grid-cols-[auto_1fr] gap-4 *:rounded-lg *:border *:bg-white/50 *:p-4 last:*:p-8" orientation="horizontal">
 				<TabList className="*:flex *:w-36 *:items-center *:gap-2 *:rounded *:border *:border-transparent *:p-2 *:outline-none hover:*:border hover:*:bg-gray-100 focus:*:border-gray-200 focus:*:bg-gray-100">
 					<Tab id="home">
 						<LuHome /> Home
@@ -246,16 +165,16 @@ export default function Index() {
 					</Tab>
 				</TabList>
 				<TabPanel id="home">
-					<fetcher.Form
-						className="grid justify-items-center gap-4"
-						method="POST"
-						action="/?index"
-						onSubmit={(e) => e.preventDefault()}
-					>
+					<fetcher.Form className="grid justify-items-center gap-4" method="POST" action="/?index" onSubmit={(e) => e.preventDefault()}>
 						<Label>
-							<Heading className="mb-2 font-semibold text-lg">
-								Job Requirements
-							</Heading>
+							<div className="flex items-baseline">
+								<Heading className="mb-2 font-semibold text-lg">Job Requirements</Heading>
+								<small className={`ml-auto font-normal text-xs ${jobDescriptionLengthLeft < 50 ? "text-red-500" : "text-gray-600"}`}>
+									(&nbsp;
+									{clientConfig.MAX_JOB_DESCRIPTION_LENGTH - requirements.length}
+									&nbsp; characters left&nbsp;)
+								</small>
+							</div>
 							<TextArea
 								className="aspect-[2/1] w-full min-w-[60ch] resize-none rounded-lg border border-gray-700 p-4 text-lg focus:outline-gray-600"
 								onChange={(e) => {
@@ -263,18 +182,15 @@ export default function Index() {
 									sessionStorage.setItem("requirements", e.target.value);
 								}}
 								value={requirements}
+								maxLength={clientConfig.MAX_JOB_DESCRIPTION_LENGTH}
 							/>
 						</Label>
 						<DropZone
 							className="drop-target:-outline-offset-[12px] grid aspect-video w-full min-w-[400px] max-w-lg place-content-center justify-items-center gap-4 rounded-2xl border-2 border-gray-700 border-dashed drop-target:bg-black/10 p-4 outline-dashed drop-target:outline-black-40 outline-transparent outline-offset-0 duration-150"
 							onDrop={async (e) => {
-								const filesPromise = e.items
-									.filter((item) => item.kind === "file")
-									.map((item) => item.getFile());
+								const filesPromise = e.items.filter((item) => item.kind === "file").map((item) => item.getFile());
 
-								const directory = e.items.filter(
-									(item) => item.kind === "directory",
-								);
+								const directory = e.items.filter((item) => item.kind === "directory");
 								for (const entry of directory) {
 									const entries = entry.getEntries();
 									for await (const entry of entries) {
@@ -290,9 +206,7 @@ export default function Index() {
 							}}
 						>
 							<LuUploadCloud className="mx-auto size-10" />
-							<h2 className="font-semibold text-2xl">
-								Drag and drop files/folder here
-							</h2>
+							<h2 className="font-semibold text-2xl">Drag and drop files/folder here</h2>
 							<div className="flex w-full items-center gap-4">
 								<hr className="grow border border-black/10" />
 								<p>OR</p>
@@ -314,10 +228,7 @@ export default function Index() {
 						{images.length > 0 && (
 							<div className="flex w-full">
 								<TooltipTrigger delay={100}>
-									<Tooltip
-										className="ml-4 rounded border bg-white p-2 text-gray-500 text-sm"
-										placement="right"
-									>
+									<Tooltip className="ml-4 rounded border bg-white p-2 text-gray-500 text-sm" placement="right">
 										<OverlayArrow>
 											<div className="border-4 border-transparent border-r-white" />
 										</OverlayArrow>
@@ -328,20 +239,16 @@ export default function Index() {
 										onPress={() => submit(images)}
 										isDisabled={!requirements}
 									>
-										Run <LuSparkles />
+										Scan <LuSparkles />
 									</Button>
 								</TooltipTrigger>
-								{data && (
-									<Filters
-										onFilterUpdate={(filter) => setMinScore(filter.minScore)}
-									/>
-								)}
+								{data && <Filters onFilterUpdate={(filter) => setMinScore(filter.minScore)} />}
 							</div>
 						)}
 					</fetcher.Form>
 					<div className="flex max-h-[600px] flex-wrap items-center justify-center gap-8 overflow-y-auto rounded border border-black/20 p-4 text-center empty:hidden">
 						{fetcher.state === "submitting" ? (
-							<p className="text-xl">
+							<p className="flex items-center gap-2 text-xl">
 								Processing... <Spinner className="size-10 fill-black" />
 							</p>
 						) : data ? (
@@ -349,14 +256,8 @@ export default function Index() {
 								{data
 									.filter((item) => item.score >= minScore)
 									.map((item) => (
-										<div
-											className="flex max-w-lg items-center gap-4 rounded-lg border p-4"
-											key={item.reason}
-										>
-											<CircularProgressBar
-												className="shrink-0"
-												progress={item.score}
-											/>
+										<div className="flex max-w-lg items-center gap-4 rounded-lg border p-4" key={item.reason}>
+											<CircularProgressBar className="shrink-0" progress={item.score} />
 											<div className="flex flex-col gap-2 *:rounded *:border">
 												<div>
 													<h3 className="font-semibold">Email</h3>
@@ -378,26 +279,15 @@ export default function Index() {
 									{images.map((item, i) => (
 										<div key={item[0].slice(500, 600)}>
 											<div className="flex w-full justify-between">
-												<span className="font-medium text-gray-500 text-sm">
-													{item.length} page(s)
-												</span>
+												<span className="font-medium text-gray-500 text-sm">{item.length} page(s)</span>
 												<Button
 													className="mb-1 flex items-center gap-2 rounded-full bg-gray-200 p-1 font-bold text-gray-500 text-lg duration-100 hover:bg-gray-600 hover:text-white"
-													onPress={() =>
-														setImages((items) =>
-															items.filter((_, idx) => idx !== i),
-														)
-													}
+													onPress={() => setImages((items) => items.filter((_, idx) => idx !== i))}
 												>
 													<LuX className="size-4 stroke-[3]" />
 												</Button>
 											</div>
-											<img
-												className="rounded border border-gray-600"
-												src={item[0]}
-												alt="resume"
-												width={200}
-											/>
+											<img className="rounded border border-gray-600" src={item[0]} alt="resume" width={200} />
 										</div>
 									))}
 								</div>
