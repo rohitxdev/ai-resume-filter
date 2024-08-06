@@ -9,7 +9,7 @@ export const DeckOfCards = (props: DeckOfCardsProps) => {
 
 	return (
 		<div
-			className="slide-rotate-reverse relative my-32 size-64 origin-bottom max-sm:size-32 max-md:my-16 max-md:size-48"
+			className="slide-rotate-reverse my-32 size-64 origin-bottom max-sm:size-32 max-md:my-16 max-md:size-48"
 			style={{ "--angle": `${-90 / deckSize}deg` } as CSSProperties}
 		>
 			{props.imgUrls.map((url, i) => {

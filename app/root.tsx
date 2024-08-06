@@ -30,13 +30,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
+				<title>FilterCV</title>
+				<meta name="description" content="Streamline your hiring with AI resume filtering." />
+				{/*Facebook meta tags*/}
+				<meta property="og:url" content="https://filtercv.com" />
+				<meta property="og:type" content="website" />
+				<meta property="og:title" content="FilterCV" />
+				<meta property="og:description" content="Streamline your hiring with AI resume filtering." />
+				<meta
+					property="og:image"
+					content="https://opengraph.b-cdn.net/production/images/0e482f9a-2b74-40ef-bdcf-39ba7ce8cd91.png?token=33_Vu4lJnKKCOuvI5RbIQnNPbFP-Tds-A8y4FSOT0FQ&height=626&width=1200&expires=33258950907"
+				/>
+				{/*Twitter meta tags*/}
+				<meta name="twitter:card" content="summary_large_image" />
+				<meta property="twitter:domain" content="filtercv.com" />
+				<meta property="twitter:url" content="https://filtercv.com" />
+				<meta name="twitter:title" content="FilterCV" />
+				<meta name="twitter:description" content="Streamline your hiring with AI resume filtering." />
+				<meta
+					name="twitter:image"
+					content="https://opengraph.b-cdn.net/production/images/0e482f9a-2b74-40ef-bdcf-39ba7ce8cd91.png?token=33_Vu4lJnKKCOuvI5RbIQnNPbFP-Tds-A8y4FSOT0FQ&height=626&width=1200&expires=33258950907"
+				/>
+				{/*Fonts*/}
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
-				<link rel="shortcut icon" href="/logo.png" type="image/png" />
 				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 				<link
 					href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100..900;1,100..900&family=Epilogue:ital,wght@0,100..900;1,100..900&display=swap"
 					rel="stylesheet"
 				/>
+				{/*Favicons*/}
+				<link rel="shortcut icon" href="/logo.png" type="image/png" />
 				<Meta />
 				<Links />
 			</head>
