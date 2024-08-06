@@ -1,6 +1,6 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
 import "./tailwind.css";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { getUser } from "./utils/auth.server";
 import { config } from "./utils/config.server";
 
@@ -21,10 +21,19 @@ export const loader = async (args: LoaderFunctionArgs) => {
 	return {
 		user,
 		clientConfig,
+		origin: args.request.headers.get("Origin"),
 	};
 };
 
-const APP_URL = config.APP_URL ?? `http://localhost:${config.PORT}`;
+export const meta: MetaFunction = (args) => {
+	const { origin } = args.data as Awaited<ReturnType<typeof loader>>;
+	return [
+		{ property: "og:url", content: origin },
+		{ property: "og:image", content: `${origin}/og.png` },
+		{ property: "twitter:url", content: origin },
+		{ property: "twitter:image", content: `${origin}/og.png` },
+	];
+};
 
 export function Layout({ children }: { children: React.ReactNode }) {
 	return (
@@ -35,18 +44,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<title>FilterCV</title>
 				<meta name="description" content="Streamline your hiring with AI resume filtering." />
 				{/*Facebook meta tags*/}
-				<meta property="og:url" content={APP_URL} />
 				<meta property="og:type" content="website" />
 				<meta property="og:title" content="FilterCV" />
 				<meta property="og:description" content="Streamline your hiring with AI resume filtering." />
-				<meta property="og:image" content={`${APP_URL}/og.png`} />
 				{/*Twitter meta tags*/}
 				<meta name="twitter:card" content="summary_large_image" />
 				<meta property="twitter:domain" content="filtercv.com" />
-				<meta property="twitter:url" content={APP_URL} />
 				<meta name="twitter:title" content="FilterCV" />
 				<meta name="twitter:description" content="Streamline your hiring with AI resume filtering." />
-				<meta name="twitter:image" content={`${APP_URL}/og.png`} />
 				{/*Fonts*/}
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
 				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

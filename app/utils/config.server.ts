@@ -11,7 +11,6 @@ const booleanEnum = z.enum(["true", "false"]);
 export const config = z
 	.object({
 		APP_ENV: z.enum(["development", "production", "test"]),
-		APP_URL: z.string().min(1).optional(),
 		PORT: z
 			.string()
 			.min(1)
