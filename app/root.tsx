@@ -24,6 +24,8 @@ export const loader = async (args: LoaderFunctionArgs) => {
 	};
 };
 
+const APP_URL = config.APP_URL ?? `http://localhost:${config.PORT}`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en">
@@ -33,24 +35,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<title>FilterCV</title>
 				<meta name="description" content="Streamline your hiring with AI resume filtering." />
 				{/*Facebook meta tags*/}
-				<meta property="og:url" content="https://filtercv.com" />
+				<meta property="og:url" content={APP_URL} />
 				<meta property="og:type" content="website" />
 				<meta property="og:title" content="FilterCV" />
 				<meta property="og:description" content="Streamline your hiring with AI resume filtering." />
-				<meta
-					property="og:image"
-					content="https://opengraph.b-cdn.net/production/images/0e482f9a-2b74-40ef-bdcf-39ba7ce8cd91.png?token=33_Vu4lJnKKCOuvI5RbIQnNPbFP-Tds-A8y4FSOT0FQ&height=626&width=1200&expires=33258950907"
-				/>
+				<meta property="og:image" content={`${APP_URL}/og.png`} />
 				{/*Twitter meta tags*/}
 				<meta name="twitter:card" content="summary_large_image" />
 				<meta property="twitter:domain" content="filtercv.com" />
-				<meta property="twitter:url" content="https://filtercv.com" />
+				<meta property="twitter:url" content={APP_URL} />
 				<meta name="twitter:title" content="FilterCV" />
 				<meta name="twitter:description" content="Streamline your hiring with AI resume filtering." />
-				<meta
-					name="twitter:image"
-					content="https://opengraph.b-cdn.net/production/images/0e482f9a-2b74-40ef-bdcf-39ba7ce8cd91.png?token=33_Vu4lJnKKCOuvI5RbIQnNPbFP-Tds-A8y4FSOT0FQ&height=626&width=1200&expires=33258950907"
-				/>
+				<meta name="twitter:image" content={`${APP_URL}/og.png`} />
 				{/*Fonts*/}
 				<link rel="preconnect" href="https://fonts.googleapis.com" />
 				<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
