@@ -4,7 +4,7 @@ import { LuCheckCircle } from "react-icons/lu";
 
 const Route = () => {
 	return (
-		<div className="grid justify-items-center gap-16 overflow-x-hidden p-8">
+		<div className="grid min-h-screen justify-items-center gap-16 overflow-x-hidden p-8">
 			<div className="grid justify-items-center gap-4">
 				<h1 className="font-bold text-4xl">Streamline Your Hiring with AI-Powered Resume Filtering.</h1>
 				<h2 className="text-xl">Find top talent faster and more accurately than ever before.</h2>
@@ -33,6 +33,10 @@ const Route = () => {
 					Get <span className="font-bold">10</span> free credits when you sign up.
 				</small>
 			</div>
+			<footer className="space-x-4 text-xs *:underline-offset-2 hover:*:underline active:*:underline">
+				<a href="/privacy-policy">Privacy Policy</a>
+				<a href="/terms-of-service">Terms of Service</a>
+			</footer>
 		</div>
 	);
 };

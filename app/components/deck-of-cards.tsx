@@ -18,7 +18,7 @@ export const DeckOfCards = (props: DeckOfCardsProps) => {
 				const y = -i * 8;
 				return (
 					<img
-						className="slide-rotate absolute top-0 left-0 aspect-[3/4] w-64 origin-bottom-left border border-black"
+						className="slide-rotate absolute top-0 left-0 aspect-[3/4] w-64 origin-bottom-left border border-black shadow-[rgb(0,0,0,0.2)_-10px_0_10px]"
 						style={
 							{
 								"--x": `${x}px`,

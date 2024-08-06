@@ -143,8 +143,8 @@ export default function Index() {
 			</div> */}
 
 			<CreditsLeft className="ml-auto" />
-			<fetcher.Form className="grid justify-items-center gap-4" method="POST" action="/?index" onSubmit={(e) => e.preventDefault()}>
-				<Label>
+			<fetcher.Form className="grid justify-items-center gap-12" method="POST" action="/?index" onSubmit={(e) => e.preventDefault()}>
+				<Label className="flex size-full flex-col">
 					<div className="flex items-baseline">
 						<Heading className="mb-2 font-semibold text-lg">Job Requirements</Heading>
 						<small className={`ml-auto font-normal text-xs ${jobDescriptionLengthLeft < 50 ? "text-red-500" : "text-gray-600"}`}>
@@ -154,7 +154,7 @@ export default function Index() {
 						</small>
 					</div>
 					<TextArea
-						className="aspect-[2/1] w-full min-w-[60ch] resize-none rounded-lg border border-gray-700 p-4 text-lg focus:outline-gray-600"
+						className="grow resize-none rounded-lg border border-gray-700 p-4 text-lg focus:outline-gray-600"
 						onChange={(e) => {
 							setRequirements(e.target.value);
 							sessionStorage.setItem("requirements", e.target.value);
@@ -162,10 +162,11 @@ export default function Index() {
 						value={requirements}
 						maxLength={clientConfig.MAX_JOB_DESCRIPTION_LENGTH}
 						placeholder="The candidate must have atleast X years of experience in Y field and ..."
+						rows={10}
 					/>
 				</Label>
 				<DropZone
-					className="drop-target:-outline-offset-[12px] grid aspect-video w-full min-w-[400px] max-w-lg place-content-center justify-items-center gap-4 rounded-2xl border-2 border-gray-700 border-dashed drop-target:bg-black/10 p-4 outline-dashed drop-target:outline-black-40 outline-transparent outline-offset-0 duration-150"
+					className="drop-target:-outline-offset-[12px] grid aspect-video w-[min(600px,100%)] max-w-lg place-content-center justify-items-center gap-4 rounded-2xl border-2 border-gray-700 border-dashed drop-target:bg-black/10 p-4 outline-dashed drop-target:outline-black-40 outline-transparent outline-offset-0 duration-150"
 					onDrop={async (e) => {
 						const filesPromise = e.items.filter((item) => item.kind === "file").map((item) => item.getFile());
 

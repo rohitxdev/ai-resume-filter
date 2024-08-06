@@ -7,11 +7,11 @@ export default function App() {
 
 	return (
 		<Tabs
-			className="grid h-screen w-screen max-w-6xl grid-cols-[auto_1fr] gap-4 p-4 *:rounded-lg *:border *:bg-white/50 last:*:p-8"
+			className="grid h-screen w-screen max-w-5xl grid-rows-[auto_1fr] gap-4 p-4 *:rounded-lg *:border *:bg-white/50 last:*:p-8"
 			orientation="horizontal"
 			onSelectionChange={(key) => navigate(key.toString())}
 		>
-			<TabList className="p-4 *:flex *:w-36 *:items-center *:gap-2 *:rounded *:border *:border-transparent selected:*:bg-twine-300 *:px-3 *:py-2 *:outline-none hover:*:border hover:*:bg-twine-100 focus:*:bg-twine-100">
+			<TabList className="flex justify-center p-4 *:flex *:w-36 *:items-center *:justify-center *:gap-2 *:rounded *:border *:border-transparent selected:*:bg-twine-200 *:px-3 *:py-2 *:outline-none hover:*:border hover:*:bg-twine-100 focus:*:bg-twine-100">
 				<Tab id="/app">
 					<LuHome /> Home
 				</Tab>

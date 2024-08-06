@@ -13,7 +13,7 @@
 }
 
 .slide-rotate {
-    animation: slide-rotate 1s ease-in-out forwards;
+    animation: slide-rotate 750ms ease-out forwards;
 }
 
 @keyframes slide-rotate-reverse {
@@ -22,5 +22,5 @@
     }
 }
 .slide-rotate-reverse {
-    animation: slide-rotate-reverse 1s ease-in-out forwards;
+    animation: slide-rotate-reverse 750ms ease-out forwards;
 }
