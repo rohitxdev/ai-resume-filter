@@ -1,10 +1,10 @@
 import { CheckoutEventNames, type Paddle } from "@paddle/paddle-js";
 import { type LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { getUser } from "app/utils/auth.server";
+import { useCommonLoader } from "app/utils/hooks";
 import { useEffect, useRef, useState } from "react";
 import { Button, Heading, Label, Slider, SliderOutput, SliderThumb, SliderTrack } from "react-aria-components";
 import { LuCoins, LuCreditCard } from "react-icons/lu";
-import { getUser } from "~/utils/auth.server";
-import { useCommonLoader } from "~/utils/hooks";
 import { initPaddle } from "./payments.client";
 
 export const loader = async (args: LoaderFunctionArgs) => {

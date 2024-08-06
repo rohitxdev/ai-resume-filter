@@ -1,8 +1,8 @@
 import { Link } from "@remix-run/react";
+import { useCommonLoader } from "app/utils/hooks";
 import type { ComponentProps } from "react";
 import { Button, OverlayArrow, Tooltip, TooltipTrigger } from "react-aria-components";
 import { LuCoins } from "react-icons/lu";
-import { useCommonLoader } from "~/utils/hooks";
 
 interface CreditsLeftProps extends ComponentProps<typeof Button> {}
 

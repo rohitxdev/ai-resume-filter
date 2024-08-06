@@ -6,15 +6,15 @@ import { Button, Heading } from "react-aria-components";
 import { LuArrowLeft } from "react-icons/lu";
 import { z } from "zod";
 
-import { googleUserSchema } from "~/schemas/auth";
-import { commitSession, destroySession, exchangeCodeForToken, exchangeTokenForUserInfo, getGoogleAuthUrl, getSession } from "~/utils/auth.server";
+import { googleUserSchema } from "app/schemas/auth";
+import { commitSession, destroySession, exchangeCodeForToken, exchangeTokenForUserInfo, getGoogleAuthUrl, getSession } from "app/utils/auth.server";
 
+import { InputField } from "app/components/ui";
+import { createUser, getUserByEmail, setUserPasswordResetToken } from "app/db/user.server";
+import { config } from "app/utils/config.server";
+import { useCommonLoader } from "app/utils/hooks";
+import { getRandomNumber, scrypt } from "app/utils/misc";
 import Spinner from "~/assets/spinner.svg?react";
-import { InputField } from "~/components/ui";
-import { createUser, getUserByEmail, setUserPasswordResetToken } from "~/db/user.server";
-import { config } from "~/utils/config.server";
-import { useCommonLoader } from "~/utils/hooks";
-import { getRandomNumber, scrypt } from "~/utils/misc";
 
 const authTypeSchema = z.enum(["log-in", "sign-up", "forgot-password"]);
 

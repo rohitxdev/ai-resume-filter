@@ -1,5 +1,5 @@
 import { Environment, Paddle } from "@paddle/paddle-node-sdk";
-import { config } from "~/utils/config.server";
+import { config } from "app/utils/config.server";
 
 const paddle = new Paddle(config.PADDLE_API_KEY, { environment: config.APP_ENV === "production" ? Environment.production : Environment.sandbox });
 

@@ -1,7 +1,7 @@
 import { createCookieSessionStorage } from "@remix-run/node";
 import jwt from "jsonwebtoken";
 
-import { getUserById, userSchema } from "~/db/user.server";
+import { getUserById, userSchema } from "app/db/user.server";
 import { config } from "./config.server";
 
 interface GoogleAuthURLProps {

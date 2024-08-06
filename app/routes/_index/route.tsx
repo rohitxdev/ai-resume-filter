@@ -1,6 +1,6 @@
 import { Link } from "@remix-run/react";
+import { DeckOfCards } from "app/components/deck-of-cards";
 import { LuCheckCircle } from "react-icons/lu";
-import { DeckOfCards } from "~/components/deck-of-cards";
 
 const Route = () => {
 	return (
