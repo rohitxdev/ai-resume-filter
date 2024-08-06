@@ -30,10 +30,7 @@ export const getGoogleAuthUrl = (props: GoogleAuthURLProps) => {
 	return url.toString();
 };
 
-export const exchangeCodeForToken = async (
-	code: string,
-	redirectUri: string,
-) => {
+export const exchangeCodeForToken = async (code: string, redirectUri: string) => {
 	try {
 		const url = new URL("https://oauth2.googleapis.com/token");
 		url.searchParams.set("code", code);
@@ -44,8 +41,7 @@ export const exchangeCodeForToken = async (
 		const res = await fetch(url.toString(), { method: "POST" });
 		const data = await res.json();
 		const accessToken = data?.access_token;
-		if (!accessToken)
-			throw new Error("Did not get access token as expected. Response:", data);
+		if (!accessToken) throw new Error("Did not get access token as expected. Response:", data);
 		return accessToken;
 	} catch (err) {
 		console.log("Error in exchanging auth code for refresh token:", err);
@@ -55,9 +51,7 @@ export const exchangeCodeForToken = async (
 
 export const exchangeTokenForUserInfo = async (token: string) => {
 	try {
-		const res = await fetch(
-			`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`,
-		);
+		const res = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`);
 		return await res.json();
 	} catch (err) {
 		console.log("Error in exchanging token for user info:", err);
@@ -101,18 +95,17 @@ interface FlashData {
 
 const DAY_IN_SECONDS = 1 * 24 * 60 * 60;
 
-export const { getSession, commitSession, destroySession } =
-	createCookieSessionStorage<SessionData, FlashData>({
-		cookie: {
-			name: "__session",
-			httpOnly: true,
-			maxAge: DAY_IN_SECONDS * 7,
-			path: "/",
-			sameSite: "strict",
-			secrets: [config.JWT_SIGNING_KEY],
-			secure: process.env.NODE_ENV === "production",
-		},
-	});
+export const { getSession, commitSession, destroySession } = createCookieSessionStorage<SessionData, FlashData>({
+	cookie: {
+		name: "__session",
+		httpOnly: true,
+		maxAge: DAY_IN_SECONDS * 7,
+		path: "/",
+		sameSite: "strict",
+		secrets: [config.JWT_SIGNING_KEY],
+		secure: process.env.NODE_ENV === "production",
+	},
+});
 
 export const getUser = async (request: Request) => {
 	try {

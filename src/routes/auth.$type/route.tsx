@@ -1,16 +1,5 @@
-import {
-	type ActionFunctionArgs,
-	type LoaderFunctionArgs,
-	json,
-	redirect,
-} from "@remix-run/node";
-import {
-	Form,
-	Link,
-	useLoaderData,
-	useNavigation,
-	useParams,
-} from "@remix-run/react";
+import { type ActionFunctionArgs, type LoaderFunctionArgs, json, redirect } from "@remix-run/node";
+import { Form, Link, useLoaderData, useNavigation, useParams } from "@remix-run/react";
 import jwt from "jsonwebtoken";
 import { useEffect, useRef } from "react";
 import { Button, Heading } from "react-aria-components";
@@ -18,24 +7,13 @@ import { LuArrowLeft } from "react-icons/lu";
 import { z } from "zod";
 
 import { googleUserSchema } from "~/schemas/auth";
-import {
-	commitSession,
-	destroySession,
-	exchangeCodeForToken,
-	exchangeTokenForUserInfo,
-	getGoogleAuthUrl,
-	getSession,
-} from "~/utils/auth.server";
+import { commitSession, destroySession, exchangeCodeForToken, exchangeTokenForUserInfo, getGoogleAuthUrl, getSession } from "~/utils/auth.server";
 
 import Spinner from "~/assets/spinner.svg?react";
 import { InputField } from "~/components/ui";
-import {
-	createUser,
-	getUserByEmail,
-	setUserPasswordResetToken,
-} from "~/db/user.server";
+import { createUser, getUserByEmail, setUserPasswordResetToken } from "~/db/user.server";
 import { config } from "~/utils/config.server";
-import { useRootLoader } from "~/utils/hooks";
+import { useCommonLoader } from "~/utils/hooks";
 import { getRandomNumber, scrypt } from "~/utils/misc";
 
 const authTypeSchema = z.enum(["log-in", "sign-up", "forgot-password"]);
@@ -48,9 +26,7 @@ const logInBodySchema = z.object({
 const signUpBodySchema = z
 	.object({
 		email: z.string().email(),
-		password: z
-			.string()
-			.min(8, "Password has to be at least 8 characters long."),
+		password: z.string().min(8, "Password has to be at least 8 characters long."),
 		"confirm-password": z.string(),
 	})
 	.refine((val) => val.password === val["confirm-password"]);
@@ -61,8 +37,7 @@ const forgotPasswordBodySchema = z.object({
 
 export const action = async (args: ActionFunctionArgs) => {
 	const session = await getSession();
-	if (session.has("userId"))
-		return json({ success: false, message: "user is already logged in" }, 400);
+	if (session.has("userId")) return json({ success: false, message: "user is already logged in" }, 400);
 
 	const formData = Object.fromEntries(await args.request.formData());
 	if (formData["bot-trap"]) return null;
@@ -124,8 +99,7 @@ export const action = async (args: ActionFunctionArgs) => {
 
 		case "forgot-password": {
 			const forgotPasswordData = forgotPasswordBodySchema.safeParse(formData);
-			if (!forgotPasswordData.success)
-				return json(forgotPasswordData.error, 422);
+			if (!forgotPasswordData.success) return json(forgotPasswordData.error, 422);
 			const user = await getUserByEmail(forgotPasswordData.data.email);
 			if (!user) return json({ error: "user not found" }, 404);
 			const passwordResetToken = jwt.sign(
@@ -226,7 +200,7 @@ export default function Route() {
 	const gitHubAuthUrl = data?.gitHubAuthUrl;
 	const passwordRef = useRef<string | null>(null);
 	const { state } = useNavigation();
-	const { user } = useRootLoader();
+	const { user } = useCommonLoader();
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: only need to check once
 	useEffect(() => {
@@ -254,24 +228,14 @@ export default function Route() {
 				<>
 					<img src="/logo.png" alt="Logo" height={64} width={64} />
 					<Form
-						className="grid w-[calc(100vw-32px)] max-w-sm items-center gap-4 rounded-lg border border-white/10 bg-white/50 p-6 ring-white/30 [&_label]:text-sm [&_label]:text-black"
+						className="grid w-[calc(100vw-32px)] max-w-sm items-center gap-4 rounded-lg border border-white/10 bg-white/50 p-6 ring-white/30 [&_label]:text-black [&_label]:text-sm"
 						method="POST"
 						action={`/auth/${authType}`}
 					>
 						<Heading className="mb-2 text-center font-bold text-3xl">
-							{authType === "log-in"
-								? "Welcome Back"
-								: authType === "sign-up"
-									? "Create Account"
-									: "Reset Password"}
+							{authType === "log-in" ? "Welcome Back" : authType === "sign-up" ? "Create Account" : "Reset Password"}
 						</Heading>
-						<InputField
-							type="email"
-							name="email"
-							autoComplete="email"
-							label="Email"
-							isRequired
-						/>
+						<InputField type="email" name="email" autoComplete="email" label="Email" isRequired />
 						{authType === "forgot-password" && (
 							<Button
 								type="submit"
@@ -289,8 +253,7 @@ export default function Route() {
 								validate={(val) => {
 									if (!val) return "Please enter your password.";
 									if (authType === "log-in") return;
-									if (val.length < 8)
-										return "Password has to be at least 8 characters long.";
+									if (val.length < 8) return "Password has to be at least 8 characters long.";
 									return;
 								}}
 								minLength={8}
@@ -320,8 +283,7 @@ export default function Route() {
 									name="confirm-password"
 									validate={(val) => {
 										if (!val) return "Please confirm your password.";
-										if (val !== passwordRef.current)
-											return "Passwords have to match.";
+										if (val !== passwordRef.current) return "Passwords have to match.";
 									}}
 									minLength={8}
 									label="Confirm password"
@@ -337,10 +299,7 @@ export default function Route() {
 						)}
 						{authType !== "forgot-password" && (
 							<>
-								<Button
-									type="submit"
-									className="mt-2 h-12 w-full rounded-lg bg-twine-500 font-semibold text-xl"
-								>
+								<Button type="submit" className="mt-2 h-12 w-full rounded-lg bg-twine-500 font-semibold text-xl">
 									{state === "submitting" ? (
 										<Spinner className="mx-auto size-6 fill-white" />
 									) : authType === "log-in" ? (
@@ -350,9 +309,7 @@ export default function Route() {
 									)}
 								</Button>
 								<p className="-mt-2 text-right text-neutral-400 text-xs">
-									{authType === "log-in"
-										? "Don't have an account?"
-										: "Already have an account?"}
+									{authType === "log-in" ? "Don't have an account?" : "Already have an account?"}
 									<Link
 										replace
 										to={`/auth/${authType === "log-in" ? "sign-up" : "log-in"}`}
@@ -374,12 +331,7 @@ export default function Route() {
 												className="flex h-12 w-full items-center justify-center gap-5 rounded-lg bg-white font-semibold text-black"
 											>
 												Continue with Google
-												<img
-													src="/google.svg"
-													alt="Google Logo"
-													height={24}
-													width={24}
-												/>
+												<img src="/google.svg" alt="Google Logo" height={24} width={24} />
 											</Link>
 										)}
 										{gitHubAuthUrl && (
@@ -388,24 +340,14 @@ export default function Route() {
 												className="flex h-12 w-full items-center justify-center gap-5 rounded-lg bg-white font-semibold text-black"
 											>
 												Continue with GitHub
-												<img
-													src="/github.svg"
-													alt="GitHub Logo"
-													height={24}
-													width={24}
-												/>
+												<img src="/github.svg" alt="GitHub Logo" height={24} width={24} />
 											</Link>
 										)}
 									</>
 								}
 							</>
 						)}
-						<input
-							type="email"
-							name="bot-trap"
-							aria-hidden
-							className="hidden"
-						/>
+						<input type="email" name="bot-trap" aria-hidden className="hidden" />
 					</Form>
 				</>
 			)}

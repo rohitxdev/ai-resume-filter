@@ -18,4 +18,15 @@ db.exec(`
     );
 `);
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        userId INTEGER NOT NULL, 
+        createdAt TEXT NOT NULL,
+        jobDescription TEXT,
+        consumedCredits INTEGER,
+        FOREIGN KEY(userId) REFERENCES users(id)
+    )
+`);
+
 export { db };

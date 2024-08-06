@@ -1,5 +1,4 @@
 import { useRouteLoaderData } from "@remix-run/react";
 import type { loader as rootLoader } from "~/root";
 
-export const useRootLoader = () =>
-	useRouteLoaderData<typeof rootLoader>("root")!;
+export const useCommonLoader = () => useRouteLoaderData<typeof rootLoader>("root")!;

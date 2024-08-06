@@ -1,7 +1,7 @@
 import { TransactionCompletedEvent } from "@paddle/paddle-node-sdk";
 import { type ActionFunctionArgs, json } from "@remix-run/node";
 import { addCredits } from "~/db/user.server";
-import { getCustomer } from "../store/payments.server";
+import { getCustomer } from "../app.store/payments.server";
 
 export const action = async (args: ActionFunctionArgs) => {
 	switch (args.request.method) {

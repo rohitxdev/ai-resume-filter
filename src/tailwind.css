@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@keyframes slide-rotate {
+    from{
+        transform: rotate(cal(var(--angle) -5)) ;
+    }
+    to{
+        transform: rotate(var(--angle)) translate(var(--x), var(--y));
+    }
+}
+
+.slide-rotate {
+    animation: slide-rotate 1s ease-in-out forwards;
+}
+
+@keyframes slide-rotate-reverse {
+    to{
+        transform: rotate(var(--angle)) translateX(16px);
+    }
+}
+.slide-rotate-reverse {
+    animation: slide-rotate-reverse 1s ease-in-out forwards;
+}
