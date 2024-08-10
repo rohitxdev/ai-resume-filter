@@ -1,6 +1,6 @@
 import { TransactionCompletedEvent } from "@paddle/paddle-node-sdk";
 import { type ActionFunctionArgs, json } from "@remix-run/node";
-import { addCredits } from "app/db/user.server";
+import { updateCredits } from "app/db/user.server";
 import { getCustomer } from "../app.store/payments.server";
 
 export const action = async (args: ActionFunctionArgs) => {
@@ -12,7 +12,7 @@ export const action = async (args: ActionFunctionArgs) => {
 			if (!data.customerId || !amount) break;
 
 			const customer = await getCustomer(data.customerId);
-			addCredits(customer.email, Number.parseInt(amount, 10));
+			updateCredits(customer.email, Number.parseInt(amount, 10));
 			break;
 		}
 

@@ -1,7 +1,7 @@
 import { createCookieSessionStorage } from "@remix-run/node";
 import jwt from "jsonwebtoken";
 
-import { getUserById, userSchema } from "app/db/user.server";
+import { getUserById, userSchema, userWithIdSchema } from "app/db/user.server";
 import { config } from "./config.server";
 
 interface GoogleAuthURLProps {
@@ -116,10 +116,7 @@ export const getUser = async (request: Request) => {
 		const user = await getUserById(userId);
 		if (!user) return null;
 
-		return {
-			...userSchema.parse({ ...user, isBanned: user.isBanned === 1 }),
-			id: user.id.toString(),
-		};
+		return userWithIdSchema.parse({ ...user, isBanned: user.isBanned, id: user.id.toString() });
 	} catch (error) {
 		console.log("Error in getting user from session:", error);
 		return null;

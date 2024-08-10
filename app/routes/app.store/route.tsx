@@ -1,5 +1,6 @@
 import { CheckoutEventNames, type Paddle } from "@paddle/paddle-js";
 import { type LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { useRevalidator } from "@remix-run/react";
 import { getUser } from "app/utils/auth.server";
 import { useCommonLoader } from "app/utils/hooks";
 import { useEffect, useRef, useState } from "react";
@@ -19,12 +20,14 @@ const Route = () => {
 	const [credits, setCredits] = useState(minCredits);
 	const paddle = useRef<Paddle | null>(null);
 	const totalPrice = (credits * 5) / minCredits;
+	const { revalidate } = useRevalidator();
 
 	useEffect(() => {
 		const getPaddle = async () => {
 			const res = await initPaddle(clientConfig.PADDLE_CLIENT_TOKEN, (e) => {
 				if (e.name === CheckoutEventNames.CHECKOUT_COMPLETED) {
 					paddle?.current?.Checkout.close();
+					revalidate();
 				}
 			});
 			if (!res) return;

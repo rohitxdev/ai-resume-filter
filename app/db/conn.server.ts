@@ -1,32 +1,23 @@
-import SQLiteDB from "better-sqlite3";
+import { styleText } from "node:util";
+import { MongoClient, type MongoClientOptions } from "mongodb";
+import { config } from "~/utils/config.server";
 
-const db = new SQLiteDB("app.db");
+const connectToDb = async (url: string, options?: MongoClientOptions) => {
+	try {
+		console.log(styleText("dim", "Connecting to DB..."));
+		const client = new MongoClient(url, options);
+		await client.connect();
+		console.log(styleText("green", "Connected to DB."));
+		return client;
+	} catch (err) {
+		console.log(styleText("red", "Error connecting to DB:"), err);
+		process.exit(1);
+	}
+};
 
-// db.pragma("journal_mode = WAL");
+const client = await connectToDb(config.DB_URL, {
+	connectTimeoutMS: 5000,
+	monitorCommands: true,
+});
 
-db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT NOT NULL,
-        passwordHash TEXT,
-        fullName TEXT,
-        pictureUrl TEXT,
-        role TEXT NOT NULL,
-        creditsLeft INTEGER NOT NULL,
-        isBanned INTEGER NOT NULL,
-        passwordResetToken TEXT
-    );
-`);
-
-db.exec(`
-    CREATE TABLE IF NOT EXISTS sessions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, 
-        userId INTEGER NOT NULL, 
-        createdAt TEXT NOT NULL,
-        jobDescription TEXT,
-        consumedCredits INTEGER,
-        FOREIGN KEY(userId) REFERENCES users(id)
-    )
-`);
-
-export { db };
+export const db = client.db("filtercv");

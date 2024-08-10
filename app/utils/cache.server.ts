@@ -1,29 +1,52 @@
-import SQLiteDB from "better-sqlite3";
+export class MemoryCache<K, V> {
+	#kv: Map<K, V>;
+	#ttls: Map<K, number>;
+	#checkInterval: number;
 
-const db = new SQLiteDB("cache.db");
+	/**
+	 *
+	 * @param checkInterval interval in milliseconds
+	 */
+	constructor(checkInterval: number) {
+		this.#kv = new Map<K, V>();
+		this.#ttls = new Map<K, number>();
+		this.#checkInterval = checkInterval;
 
-// db.pragma("journal_mode = WAL");
+		setInterval(() => {
+			for (const [key, ttl] of this.#ttls.entries()) {
+				if (ttl < Date.now()) {
+					this.#kv.delete(key);
+					this.#ttls.delete(key);
+				}
+			}
+		}, this.#checkInterval);
+	}
 
-db.exec(`
-    CREATE TABLE IF NOT EXISTS cache (
-	    id INTEGER PRIMARY KEY AUTOINCREMENT,
-	    key TEXT NOT NULL,
-	    value TEXT NOT NULL
-    );`);
+	get(key: K) {
+		return this.#kv.get(key);
+	}
+	/**
+	 *
+	 * @param key
+	 * @param value
+	 * @param ttl TTL - time to live in milliseconds
+	 */
+	set(key: K, value: V, ttl?: number) {
+		this.#kv.set(key, value);
+		if (ttl) {
+			this.#ttls.set(key, Date.now() + ttl);
+		}
+	}
+	delete(key: K) {
+		this.#kv.delete(key);
+		this.#ttls.delete(key);
+	}
+	clear() {
+		this.#kv.clear();
+		this.#ttls.clear();
+	}
+}
 
-const getDataStmt = db.prepare("SELECT value FROM cache WHERE key = ?");
-const setDataStmt = db.prepare(
-	"INSERT OR REPLACE INTO cache (key, value) VALUES (?, ?)",
-);
+const THIRTY_SECONDS = 30 * 1000;
 
-export const cache = {
-	get: (key: string) => {
-		const res = getDataStmt.get(key) as { value: string } | undefined;
-		return res?.value ?? null;
-	},
-	set: (key: string, value: string) => {
-		const res = setDataStmt.run(key, value);
-		return res.lastInsertRowid;
-	},
-	clear: () => db.exec("DELETE FROM cache"),
-};
+export const cache = new MemoryCache<string, string>(THIRTY_SECONDS);

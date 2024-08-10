@@ -1,6 +1,7 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
 import "./tailwind.css";
 import type { LoaderFunctionArgs } from "@remix-run/node";
+import { Toaster } from "react-hot-toast";
 import { getUser } from "./utils/auth.server";
 import { config } from "./utils/config.server";
 
@@ -58,6 +59,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<Links />
 			</head>
 			<body className="grid justify-center bg-twine-100 *:font-chivo">
+				<Toaster />
 				{children}
 				<ScrollRestoration />
 				<Scripts />

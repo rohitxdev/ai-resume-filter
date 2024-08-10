@@ -1,7 +1,6 @@
+import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { db } from "./conn.server";
-
-export const subscriptionPlanSchema = z.enum(["free", "pro"]);
 
 export const roleSchema = z.enum(["user", "admin"]);
 
@@ -16,45 +15,47 @@ export const userSchema = z.object({
 	passwordResetToken: z.string().nullish(),
 });
 
-const userWithIdSchema = userSchema.merge(z.object({ id: z.string() }));
+export const userWithIdSchema = userSchema.extend({ id: z.string().min(1) });
 
-const getUserByIdStmt = db.prepare("SELECT * FROM users WHERE id = ?");
+const users = db.collection<z.infer<typeof userSchema>>("users");
+
 export const getUserById = async (id: string) => {
-	return (await getUserByIdStmt.get(Number.parseInt(id, 10))) as z.infer<typeof userWithIdSchema> | null;
+	const user = await users.findOne({ _id: new ObjectId(id) });
+	if (!user) return null;
+	//Used the following method because delete operator and spreading are too slow according to benchmarks.
+	return {
+		id: user._id.toString(),
+		email: user.email,
+		passwordHash: user.passwordHash,
+		fullName: user.fullName,
+		pictureUrl: user.pictureUrl,
+		role: user.role,
+		creditsLeft: user.creditsLeft,
+		isBanned: user.isBanned,
+		passwordResetToken: user.passwordResetToken,
+	} as z.infer<typeof userWithIdSchema>;
 };
 
-const getUserByEmailStmt = db.prepare("SELECT * FROM users WHERE email = ?");
-export const getUserByEmail = async (email: string) => (await getUserByEmailStmt.get(email)) as z.infer<typeof userWithIdSchema> | null;
-
-const createUserStmt = db.prepare(
-	"INSERT INTO users (email, passwordHash, fullName, pictureUrl, role, creditsLeft, isBanned, passwordResetToken) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-);
-export const createUser = (user: z.infer<typeof userSchema>) => {
-	const res = createUserStmt.run(
-		user.email,
-		user.passwordHash,
-		user.fullName,
-		user.pictureUrl,
-		user.role,
-		user.creditsLeft,
-		user.isBanned ? 1 : 0,
-		user.passwordResetToken,
-	);
-	return res.lastInsertRowid.toString();
+export const getUserByEmail = async (email: string) => {
+	const user = await users.findOne({ email });
+	if (!user) return null;
+	//Used the following method because delete operator and spreading are too slow according to benchmarks.
+	return {
+		id: user._id.toString(),
+		email: user.email,
+		passwordHash: user.passwordHash,
+		fullName: user.fullName,
+		pictureUrl: user.pictureUrl,
+		role: user.role,
+		creditsLeft: user.creditsLeft,
+		isBanned: user.isBanned,
+		passwordResetToken: user.passwordResetToken,
+	} as z.infer<typeof userWithIdSchema>;
 };
 
-const setUserPasswordResetTokenStmt = db.prepare("UPDATE users SET passwordResetToken = ? WHERE id = ?");
-export const setUserPasswordResetToken = (userId: string, token: string) => {
-	const res = setUserPasswordResetTokenStmt.run(token, userId);
-	return res.lastInsertRowid.toString();
-};
+export const createUser = async (user: z.infer<typeof userSchema>) => await db.collection("users").insertOne(user);
 
-const consumeCreditStmt = db.prepare("UPDATE users SET creditsLeft = creditsLeft - 1 WHERE id = ?");
-export const consumeCredit = (userId: number) => {
-	return consumeCreditStmt.run(userId).lastInsertRowid.toString();
-};
+export const setUserPasswordResetToken = (userId: string, token: string) =>
+	users.updateOne({ _id: new ObjectId(userId) }, { $set: { passwordResetToken: token } });
 
-const addCreditsStmt = db.prepare("UPDATE users SET creditsLeft = creditsLeft + ? WHERE email = ?");
-export const addCredits = (userEmail: string, amount: number) => {
-	return addCreditsStmt.run(amount, userEmail).lastInsertRowid.toString();
-};
+export const updateCredits = (userId: string, amount: number) => users.updateOne({ _id: new ObjectId(userId) }, { $inc: { creditsLeft: amount } });

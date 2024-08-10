@@ -81,7 +81,7 @@ export const action = async (args: ActionFunctionArgs) => {
 				creditsLeft: 5,
 			});
 
-			session.set("userId", userId);
+			session.set("userId", userId.insertedId.toString());
 
 			return json(null, {
 				headers: {
@@ -172,7 +172,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
 					isBanned: false,
 					creditsLeft: 5,
 				});
-				session.set("userId", userId);
+				session.set("userId", userId.insertedId.toString());
 			}
 			return json(
 				{ googleAuthUrl: null, gitHubAuthUrl: null, reload: true },

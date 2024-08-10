@@ -2,7 +2,6 @@ import { type ActionFunctionArgs, type MetaFunction, json } from "@remix-run/nod
 import { useFetcher } from "@remix-run/react";
 import { Modal } from "app/components/ui";
 import { addSession } from "app/db/sessions.server";
-import { consumeCredit } from "app/db/user.server";
 import { getUser } from "app/utils/auth.server";
 import { cache } from "app/utils/cache.server";
 import { config } from "app/utils/config.server";
@@ -13,7 +12,8 @@ import { Button, DropZone, FileTrigger, Heading, Label, OverlayArrow, TextArea, 
 import { LuFilePlus2, LuSparkles, LuUploadCloud, LuX } from "react-icons/lu";
 import { z } from "zod";
 import Spinner from "~/assets/spinner.svg?react";
-import { CircularProgressBar } from "./circle-progress";
+import { updateCredits } from "~/db/user.server";
+import { CandidateDetails } from "./circle-progress";
 import { CreditsLeft } from "./credits-left";
 import { OutOfCreditsDialog } from "./dialogs";
 import { Filters } from "./filters";
@@ -39,11 +39,11 @@ const requestSchema = z.object({
 });
 
 const analyseResume = async (imgUrls: string[], requirements: string, userId: string) => {
-	let res: string | null;
+	let res: string;
 	if (config.IS_CACHE_ENABLED) {
 		const key = xxhashSync.hash(requirements + imgUrls.join());
 		const cachedData = cache.get(key);
-		if (cachedData !== null) {
+		if (cachedData !== undefined) {
 			return { ...JSON.parse(cachedData), isCacheHit: true };
 		}
 
@@ -52,7 +52,7 @@ const analyseResume = async (imgUrls: string[], requirements: string, userId: st
 	} else {
 		res = await scanResume(requirements, imgUrls);
 	}
-	consumeCredit(Number.parseInt(userId, 10));
+	await updateCredits(userId, -1);
 	return { ...JSON.parse(res), isCacheHit: false };
 };
 
@@ -66,7 +66,7 @@ export const action = async (args: ActionFunctionArgs) => {
 			const outputPromises = data.imgUrls.map((item) => analyseResume(item, data.requirements, user.id));
 			const payload = await Promise.all(outputPromises);
 			addSession({
-				userId: Number.parseInt(user.id, 10),
+				userId: user.id,
 				createdAt: new Date().toISOString(),
 				jobDescription: data.requirements,
 				consumedCredits: data.imgUrls.flat().length,
@@ -87,6 +87,7 @@ export default function Index() {
 	const fetcher = useFetcher();
 	const { clientConfig } = useCommonLoader();
 	const [images, setImages] = useState<string[][]>([]);
+	const [pdfs, setPdfs] = useState<string[]>([]);
 	const [requirements, setRequirements] = useState("");
 	const [showOutOfCredits, setShowOutOfCredits] = useState(false);
 	const [data, setData] = useState<z.infer<typeof responseSchema>["payload"] | null>(null);
@@ -102,14 +103,16 @@ export default function Index() {
 				imgUrls: images.map((item) => item.map((item) => item.split(",")[1])),
 				requirements,
 			},
-			{ method: "POST", action: "/?index", encType: "application/json" },
+			{ method: "POST", action: "/app?index", encType: "application/json" },
 		);
 	};
 
 	const convertFilesToImages = async (files: FileList | File[]) => {
-		const imagesPromise = Array.from(files).map(convertPDFToImages);
+		const filesArray = Array.from(files);
+		const imagesPromise = filesArray.map(convertPDFToImages);
 		const images = await Promise.all(imagesPromise);
 		setImages(images);
+		setPdfs(filesArray.map((item) => URL.createObjectURL(item)));
 	};
 
 	useEffect(() => {
@@ -128,20 +131,6 @@ export default function Index() {
 	return (
 		<div className="grid grid-rows-[auto_1fr] gap-8 p-4 font-sans">
 			<Modal dialog={<OutOfCreditsDialog />} isOpen={showOutOfCredits} onOpenChange={setShowOutOfCredits} />
-			{/* <div className="absolute top-0 right-0 m-8 empty:hidden">
-				{user ? (
-					<div className="flex items-center gap-4">
-						<CreditsLeft />
-						{user?.pictureUrl && <img className="rounded-full" src={user?.pictureUrl} alt="User" height={48} width={48} />}
-						<fetcher.Form action="/auth/log-out" method="POST">
-							<Button type="submit">Log Out</Button>
-						</fetcher.Form>
-					</div>
-				) : (
-					<Link to="/auth/log-in">Log In</Link>
-				)}
-			</div> */}
-
 			<CreditsLeft className="ml-auto" />
 			<fetcher.Form className="grid justify-items-center gap-12" method="POST" action="/?index" onSubmit={(e) => e.preventDefault()}>
 				<Label className="flex size-full flex-col">
@@ -154,7 +143,7 @@ export default function Index() {
 						</small>
 					</div>
 					<TextArea
-						className="grow resize-none rounded-lg border border-gray-700 p-4 text-lg focus:outline-gray-600"
+						className="min-w-0 grow resize-none rounded-lg border border-gray-700 p-4 text-lg focus:outline-gray-600"
 						onChange={(e) => {
 							setRequirements(e.target.value);
 							sessionStorage.setItem("requirements", e.target.value);
@@ -166,7 +155,7 @@ export default function Index() {
 					/>
 				</Label>
 				<DropZone
-					className="drop-target:-outline-offset-[12px] grid aspect-video w-[min(600px,100%)] max-w-lg place-content-center justify-items-center gap-4 rounded-2xl border-2 border-gray-700 border-dashed drop-target:bg-black/10 p-4 outline-dashed drop-target:outline-black-40 outline-transparent outline-offset-0 duration-150"
+					className="drop-target:-outline-offset-[12px] grid aspect-video w-full min-w-0 max-w-lg place-content-center justify-items-center gap-4 rounded-2xl border-2 border-gray-700 border-dashed drop-target:bg-black/10 p-4 outline-dashed drop-target:outline-black-40 outline-transparent outline-offset-0 duration-150"
 					onDrop={async (e) => {
 						const filesPromise = e.items.filter((item) => item.kind === "file").map((item) => item.getFile());
 
@@ -226,32 +215,29 @@ export default function Index() {
 					</div>
 				)}
 			</fetcher.Form>
-			<div className="flex max-h-[600px] flex-wrap items-center justify-center gap-8 overflow-y-auto rounded border border-black/20 p-4 text-center empty:hidden">
+
+			<div className="flex max-h-[600px] flex-wrap items-center justify-center gap-8 overflow-y-auto p-4 text-center empty:hidden">
 				{fetcher.state === "submitting" ? (
 					<p className="flex items-center gap-2 text-xl">
 						Processing... <Spinner className="size-10 fill-black" />
 					</p>
 				) : data ? (
-					<div className="flex flex-col gap-4">
-						{data
-							.filter((item) => item.score >= minScore)
-							.map((item) => (
-								<div className="flex max-w-lg items-center gap-4 rounded-lg border p-4" key={item.reason}>
-									<CircularProgressBar className="shrink-0" progress={item.score} />
-									<div className="flex flex-col gap-2 *:rounded *:border">
-										<div>
-											<h3 className="font-semibold">Email</h3>
-											<p>{item.email}</p>
-											<h3 className="font-semibold">Name</h3>
-											<p>{item.name}</p>
-										</div>
-										<div>
-											<h3 className="font-semibold">Reason</h3>
-											<p>{item.reason}</p>
-										</div>
-									</div>
-								</div>
-							))}
+					<div>
+						<h4>{data.length} results</h4>
+						<div className="grid grid-cols-1 gap-4">
+							{data
+								.filter((item) => item.score >= minScore)
+								.map((item, i) => (
+									<CandidateDetails
+										key={item.reason}
+										progress={item.score}
+										name={item.name}
+										email={item.email}
+										reason={item.reason}
+										resumeUrl={pdfs[0]}
+									/>
+								))}
+						</div>
 					</div>
 				) : (
 					images.length > 0 && (

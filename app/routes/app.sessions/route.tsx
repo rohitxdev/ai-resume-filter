@@ -7,7 +7,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
 	const user = await getUser(args.request);
 	if (!user) return null;
 
-	return { sessions: getSessions(Number.parseInt(user.id, 10)) };
+	return { sessions: await getSessions(user.id) };
 };
 
 const Route = () => {

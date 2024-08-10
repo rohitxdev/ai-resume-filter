@@ -30,5 +30,6 @@ export const config = z
 			.transform((item) => Number.parseInt(item, 10)),
 		PADDLE_CLIENT_TOKEN: z.string().min(1),
 		PADDLE_API_KEY: z.string().min(1),
+		DB_URL: z.string().min(1),
 	})
 	.parse(process.env);
