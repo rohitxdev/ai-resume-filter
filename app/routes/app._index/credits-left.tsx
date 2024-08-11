@@ -21,7 +21,7 @@ export const CreditsLeft = ({ className, ...props }: CreditsLeftProps) => {
 					<div className="border-8 border-transparent border-b-white" />
 				</OverlayArrow>
 				<p>You have {user.creditsLeft} credits left.</p>
-				<Link className="mx-auto block text-center text-twine-800 underline underline-offset-2" to="/store">
+				<Link className="mx-auto block text-center text-twine-800 underline underline-offset-2" to="/app/account">
 					Buy more
 				</Link>
 			</Tooltip>

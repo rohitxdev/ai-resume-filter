@@ -129,7 +129,7 @@ export default function Index() {
 	}, []);
 
 	return (
-		<div className="grid grid-rows-[auto_1fr] gap-8 p-4 font-sans">
+		<div className="grid grid-rows-[auto_1fr] gap-8 font-sans">
 			<Modal dialog={<OutOfCreditsDialog />} isOpen={showOutOfCredits} onOpenChange={setShowOutOfCredits} />
 			<CreditsLeft className="ml-auto" />
 			<fetcher.Form className="grid justify-items-center gap-12" method="POST" action="/?index" onSubmit={(e) => e.preventDefault()}>
@@ -175,7 +175,7 @@ export default function Index() {
 					}}
 				>
 					<LuUploadCloud className="mx-auto size-10" />
-					<h2 className="font-semibold text-2xl">Drag and drop files/folder here</h2>
+					<h2 className="text-center font-semibold text-2xl">Drag and drop files/folder here</h2>
 					<div className="flex w-full items-center gap-4">
 						<hr className="grow border border-black/10" />
 						<p>OR</p>

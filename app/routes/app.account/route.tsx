@@ -1,17 +1,17 @@
 import { CheckoutEventNames, type Paddle } from "@paddle/paddle-js";
-import { type LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { useRevalidator } from "@remix-run/react";
+import { type LoaderFunctionArgs, json, redirect } from "@remix-run/node";
+import { Form, useRevalidator } from "@remix-run/react";
 import { getUser } from "app/utils/auth.server";
 import { useCommonLoader } from "app/utils/hooks";
 import { useEffect, useRef, useState } from "react";
 import { Button, Heading, Label, Slider, SliderOutput, SliderThumb, SliderTrack } from "react-aria-components";
-import { LuCoins, LuCreditCard } from "react-icons/lu";
+import { LuCoins, LuCreditCard, LuLogOut } from "react-icons/lu";
 import { initPaddle } from "./payments.client";
 
 export const loader = async (args: LoaderFunctionArgs) => {
 	const user = await getUser(args.request);
 	if (!user) return redirect("/auth/log-in");
-	return null;
+	return json(null, { headers: { "Cache-Control": "max-age=60" } });
 };
 
 const Route = () => {
@@ -43,11 +43,8 @@ const Route = () => {
 
 	return (
 		<div className="">
-			<Heading className="font-semibold text-4xl">Store</Heading>
-			<div>
-				<Heading className="text-xl">Buy credits</Heading>
-				<p>Credits are used to filter resumes. Each page costs 1 credit. You can buy {minCredits} credits for 5 USD.</p>
-			</div>
+			<Heading className="font-semibold text-3xl">Buy credits</Heading>
+			<p className="leading-loose">Credits are used to filter resumes. Each page costs 1 credit. You can buy {minCredits} credits for 5 USD.</p>
 			<Slider
 				className="mx-auto my-4 w-full"
 				defaultValue={minCredits}
@@ -88,7 +85,6 @@ const Route = () => {
 			>
 				Buy Now
 			</Button>
-
 			{clientConfig.APP_ENV !== "production" && (
 				<div className="*: m-8 mx-auto w-fit space-y-4 rounded-md border border-black p-6 *:flex *:items-center *:gap-4">
 					<h3 className="font-semibold text-xl">Dummy Credit Card</h3>
@@ -102,6 +98,12 @@ const Route = () => {
 					</div>
 				</div>
 			)}
+			<Heading className="font-semibold text-3xl leading-loose">Account</Heading>
+			<Form method="POST" action="/auth/log-out">
+				<Button className="flex items-center gap-2 border border-black px-3 py-2" type="submit">
+					<LuLogOut /> Log Out
+				</Button>
+			</Form>
 		</div>
 	);
 };

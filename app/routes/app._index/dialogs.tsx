@@ -17,7 +17,7 @@ export const OutOfCreditsDialog = () => {
 					<p className="mt-2">You have no credits left. Please purchase more credits to continue.</p>
 					<Link
 						className="group mx-auto mt-4 mb-2 flex w-fit items-center gap-2 rounded bg-twine-600 px-4 py-2 text-white active:bg-twine-700 "
-						to="/store"
+						to="/app/account"
 					>
 						Purchase Credits
 						<LuArrowRight className="size-5 duration-100 group-hover:translate-x-1" />
