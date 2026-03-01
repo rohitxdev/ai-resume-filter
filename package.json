@@ -21,7 +21,7 @@
 		"@react-email/components": "0.0.22",
 		"@react-email/font": "0.0.7",
 		"@remix-run/express": "^2.11.0",
-		"@remix-run/node": "^2.11.0",
+		"@remix-run/node": "^2.17.2",
 		"@remix-run/react": "^2.11.0",
 		"compression": "^1.7.4",
 		"cross-env": "^7.0.3",
